@@ -17,11 +17,9 @@ With the Danaher-Droid I hope to:
  #### RAG Pipeline
  1. Youtube Data API gets list of all the video_ids in the upload playlist
    - build imported from **googleapiclient** library creates client so we can make authorized requests to the api 
- ```python youtube = build('youtube', 'v3', developerKey=api_key)
- ```
+ ```python youtube = build('youtube', 'v3', developerKey=api_key)```
    - Requests made to API through **channels().list, playlistItems().list**
- ```python res = youtube.channels().list(id=channel_id, part='contentDetails').execute()
- ```
+ ```python res = youtube.channels().list(id=channel_id, part='contentDetails').execute()```
  ```python next_page_token = None
     while True:
         pl_request = youtube.playlistItems().list(
