@@ -21,7 +21,8 @@ With the Danaher-Droid I hope to:
  youtube = build('youtube', 'v3', developerKey=api_key)
  ```
    - Requests made to API through **channels().list, playlistItems().list**
-   **gets the upload playlist ID**
+
+**gets the ID of uploads playlist** 
  ```
  python res = youtube.channels().list(id=channel_id, part='contentDetails').execute()
  ```
