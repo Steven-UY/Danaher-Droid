@@ -27,9 +27,11 @@ def get_video_ids(api_key, channel_id):
         )
         pl_response = pl_request.execute()
 
+
         for item in pl_response['items']:
             video_ids.append(item['contentDetails']['videoId'])
 
+        #If there are more videos don't break out of loop
         next_page_token = pl_response.get('nextPageToken')
         if not next_page_token:
             break

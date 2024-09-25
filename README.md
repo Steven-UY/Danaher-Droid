@@ -21,9 +21,11 @@ With the Danaher-Droid I hope to:
  youtube = build('youtube', 'v3', developerKey=api_key)
  ```
    - Requests made to API through **channels().list, playlistItems().list**
+   **gets the upload playlist ID**
  ```
  python res = youtube.channels().list(id=channel_id, part='contentDetails').execute()
  ```
+ **creates loop where in each iteration we get 50 video ids in playlist**
  ```python 
     next_page_token = None
     while True:
