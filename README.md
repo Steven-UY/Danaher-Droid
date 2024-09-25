@@ -1,6 +1,6 @@
 # Danaher-Droid
 ---
-#### Overview
+### Overview
 
 I **suck** at Jiu-Jitsu and hate having to sift through all the instructionals online my attention span is too bad. Hence, I wanted to design a tool that could help me
 not be so bad. With Danaher-Droid I hope that I can effectively perform retrieval augmented generation on transcripts contained within the BJJ Fanatics youtube channel.
@@ -12,7 +12,7 @@ With the Danaher-Droid I hope to:
  - To talk in John Danaher's voice
  - Look somewhat presentable
 
-#### Tech Stack
+### Tech Stack
 
 
 
