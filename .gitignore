@@ -1,5 +1,5 @@
-venv/
 myenv/
 *.dylib
 *.so
 .env
+/Backend/lib/chroma_db/
