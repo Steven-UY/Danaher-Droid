@@ -2,7 +2,11 @@ from langchain_community.document_loaders import TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_chroma import Chroma
 from langchain_openai import OpenAIEmbeddings
+from langchain_openai import ChatOpenAI
 from dotenv import load_dotenv
+from langchain import hub
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import RunnablePassthrough
 import os
 
 load_dotenv()
@@ -22,7 +26,6 @@ if os.path.exists(persist_directory):
         embedding_function=embeddings,
         persist_directory=persist_directory
     )
-    print("Loaded existing vectorstore")
 else:
     # Create new vectorstore
     loader = TextLoader("./transcripts.txt")
@@ -47,8 +50,26 @@ else:
     print("Created and persisted new vectorstore")
 
 # Use the vectorstore
-retriever = vectorstore.as_retriever(search_type="similarity", search_kwargs={"k": 2})
+retriever = vectorstore.as_retriever(search_type="similarity", search_kwargs={"k": 20})
 
-retrieved_docs = retriever.invoke("what are the ways of retaining guard?")
+llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 
-print(retrieved_docs[0].page_content)
+prompt = hub.pull("rlm/rag-prompt")
+
+example_messages = prompt.invoke(
+    {"context": "filler context", "question": "filler question"}
+).to_messages()
+
+def format_docs(docs):
+    return "\n".join([doc.page_content for doc in docs])
+
+rag_chain = (
+    {"context": retriever | format_docs, "question": RunnablePassthrough()}
+    | prompt
+    | llm
+    | StrOutputParser()
+)
+
+for chunk in rag_chain.stream("how do I escape from the mount position?"):
+    print(chunk, end="", flush=True)
+
