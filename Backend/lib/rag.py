@@ -65,7 +65,7 @@ example_messages = prompt.invoke(
 def format_docs(docs):
     return "\n".join([doc.page_content for doc in docs])
 
-#
+#note in docs
 rag_chain = (
     {"context": retriever | format_docs, "question": RunnablePassthrough()}
     | prompt
@@ -73,7 +73,7 @@ rag_chain = (
     | StrOutputParser()
 )
 
-#
+#displays inform
 def print_retrieved_docs(query, threshold=0.3):
     docs = retriever.get_relevant_documents(query)
     print(f"\nRetrieved {len(docs)} documents for query: '{query}'\n")
@@ -108,7 +108,7 @@ def is_question_relevant(question, topic):
     return response.strip().lower() == 'yes'
 
 # Modify the main conversation loop
-topic = "Your specific topic here"  # Replace with your actual topic
+topic = "Jiu-Jitsu"  # Replace with your actual topic
 
 while True:
     user_query = input("Enter your question (or 'quit' to exit): ")
