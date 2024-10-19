@@ -1,15 +1,14 @@
 from langchain_community.document_loaders import TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_chroma import Chroma
-from langchain_openai import OpenAIEmbeddings
-from langchain_openai import ChatOpenAI
+from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from dotenv import load_dotenv
 from langchain import hub
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
-import os
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
+import os
 
 load_dotenv()
 
@@ -56,48 +55,43 @@ retriever = vectorstore.as_retriever(search_type="similarity", search_kwargs={"k
 
 llm = ChatOpenAI(model="gpt-4-0125-preview", temperature=0.3, max_tokens=1000)
 
-prompt = hub.pull("rlm/rag-prompt")
+# Define prompt template
+prompt_template = """
+You are an AI assistant knowledgeable about Jiu-Jitsu.
 
-example_messages = prompt.invoke(
-    {"context": "filler context", "question": "filler question"}
-).to_messages()
+{chat_history}
 
-def format_docs(docs):
-    return "\n".join([doc.page_content for doc in docs])
+Context:
+{context}
 
-#note in docs
-rag_chain = (
-    {"context": retriever | format_docs, "question": RunnablePassthrough()}
-    | prompt
-    | llm
-    | StrOutputParser()
+Question:
+{question}
+
+Provide a detailed answer using the context and your knowledge.
+"""
+
+prompt = PromptTemplate(
+    input_variables=["chat_history", "context", "question"],
+    template=prompt_template
 )
 
-#displays inform
-def print_retrieved_docs(query, threshold=0.3):
-    docs = retriever.get_relevant_documents(query)
-    print(f"\nRetrieved {len(docs)} documents for query: '{query}'\n")
-    for i, doc in enumerate(docs, 1):
-        print(f"Document {i}:")
-        print(f"Content: {doc.page_content[:200]}...")  # Print first 200 characters
-        print(f"Metadata: {doc.metadata}")
-        if hasattr(doc, 'similarity_score'):
-            print(f"Similarity score: {doc.similarity_score}")
-        else:
-            print("No similarity score available")
-        print()
+# Create LLMChain without memory
+rag_chain = LLMChain(
+    llm=llm,
+    prompt=prompt
+)
 
 # Define a prompt for relevance checking
 relevance_prompt = PromptTemplate(
     input_variables=["question", "topic"],
     template="""
-    You are an AI assistant designed to determine if a question is relevant to a specific topic.
-    
-    Topic: {topic}
-    Question: {question}
-    
-    Is this question relevant to the topic? Respond with only 'Yes' or 'No'.
-    """
+You are an AI assistant designed to determine if a question is relevant to a specific topic.
+
+Topic: {topic}
+Question: {question}
+
+Is this question relevant to the topic? Respond with only 'Yes' or 'No'.
+"""
 )
 
 # Create a chain for relevance checking
@@ -107,7 +101,12 @@ def is_question_relevant(question, topic):
     response = relevance_chain.run(question=question, topic=topic)
     return response.strip().lower() == 'yes'
 
-# Modify the main conversation loop
+def format_docs(docs):
+    return "\n".join([doc.page_content for doc in docs])
+
+# Initialize conversation history
+conversation_history = []
+
 topic = "Jiu-Jitsu"  # Replace with your actual topic
 
 while True:
@@ -123,15 +122,29 @@ while True:
 
     # Retrieve documents
     docs = retriever.get_relevant_documents(user_query)
-    
-    # Print retrieved documents
-    print_retrieved_docs(user_query)
 
-    # Proceed with RAG for relevant queries
+    # Format conversation history
+    chat_history_formatted = ""
+    for message in conversation_history:
+        role = "User" if message['role'] == 'user' else "Assistant"
+        chat_history_formatted += f"{role}: {message['content']}\n"
+
+    # Prepare inputs for the chain
+    chain_inputs = {
+        "question": user_query,
+        "context": format_docs(docs),
+        "chat_history": chat_history_formatted
+    }
+
+    # Get the AI response
+    response = rag_chain(chain_inputs)
+
+    # Print the response
     print("\nAI Response:")
-    for chunk in rag_chain.stream(user_query):
-        print(chunk, end="", flush=True)
+    print(response['text'])  # Adjust based on the output format
 
-    print("\n")
+    # Update the conversation history
+    conversation_history.append({'role': 'user', 'content': user_query})
+    conversation_history.append({'role': 'assistant', 'content': response['text']})
 
 print("Conversation ended.")
