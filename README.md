@@ -53,4 +53,6 @@ With the Danaher-Droid I hope to:
 
 3. Langchain Loads, Splits, Embeds and stores the document of transcripts
 
+ - 
+
 

@@ -8,6 +8,8 @@ from langchain import hub
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
 import os
+from langchain.prompts import PromptTemplate
+from langchain.chains import LLMChain
 
 load_dotenv()
 
@@ -63,7 +65,7 @@ example_messages = prompt.invoke(
 def format_docs(docs):
     return "\n".join([doc.page_content for doc in docs])
 
-#come back to this
+#
 rag_chain = (
     {"context": retriever | format_docs, "question": RunnablePassthrough()}
     | prompt
@@ -85,25 +87,47 @@ def print_retrieved_docs(query, threshold=0.3):
             print("No similarity score available")
         print()
 
+# Define a prompt for relevance checking
+relevance_prompt = PromptTemplate(
+    input_variables=["question", "topic"],
+    template="""
+    You are an AI assistant designed to determine if a question is relevant to a specific topic.
+    
+    Topic: {topic}
+    Question: {question}
+    
+    Is this question relevant to the topic? Respond with only 'Yes' or 'No'.
+    """
+)
+
+# Create a chain for relevance checking
+relevance_chain = LLMChain(llm=llm, prompt=relevance_prompt)
+
+def is_question_relevant(question, topic):
+    response = relevance_chain.run(question=question, topic=topic)
+    return response.strip().lower() == 'yes'
+
 # Modify the main conversation loop
+topic = "Your specific topic here"  # Replace with your actual topic
+
 while True:
     user_query = input("Enter your question (or 'quit' to exit): ")
     if user_query.lower() == 'quit':
         break
 
+    # Check relevance
+    if not is_question_relevant(user_query, topic):
+        print("\nAI Response:")
+        print("I'm sorry, but that question doesn't seem to be related to the topic I'm knowledgeable about. Could you please ask a question related to Jiu-Jitsu?")
+        continue
+
     # Retrieve documents
     docs = retriever.get_relevant_documents(user_query)
     
-    # Check if any documents were retrieved
-    if not docs:
-        print("\nAI Response:")
-        print("I'm sorry, but I don't have relevant information to answer that question. Could you please rephrase or ask a different question?")
-        continue
-
     # Print retrieved documents
     print_retrieved_docs(user_query)
 
-    # Proceed with RAG for queries with retrieved documents
+    # Proceed with RAG for relevant queries
     print("\nAI Response:")
     for chunk in rag_chain.stream(user_query):
         print(chunk, end="", flush=True)
