@@ -26,7 +26,7 @@ So, it's not really Danaher-Droid—more like BJJ Fanatics Droid—but whatever,
 - Store transcripts in a vector database using Chroma.
 - Implement the RAG chain to generate LLM responses.
 
-For more details on each step, see the [Technical Documentation](docs/technical_details.md).
+For more details on each step, see the [Technical Documentation](docs/tech_docs.md).
 
 ---
 
