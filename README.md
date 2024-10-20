@@ -15,55 +15,18 @@ So, it's not really Danaher-Droid—more like BJJ Fanatics Droid—but whatever,
 
 ## Tech Stack
 
-### 1. RAG Pipeline
+### 1. YouTube Data API
+- Retrieve video IDs from the BJJ Fanatics channel using the YouTube Data API.
 
-#### a. YouTube Data API - Retrieving Video IDs
+### 2. YouTube Transcript API
+- Scrape transcripts from YouTube videos.
 
-- **API Client Setup**: Use the `googleapiclient` library to build the API client for making authorized requests.
-    ```python
-    youtube = build('youtube', 'v3', developerKey=api_key)
-    ```
+### 3. Langchain and Chroma
+- Split and embed transcripts using Langchain.
+- Store transcripts in a vector database using Chroma.
+- Implement the RAG chain to generate LLM responses.
 
-- **Fetching the Uploads Playlist**: Get the `uploads` playlist ID from the channel.
-    ```python
-    res = youtube.channels().list(id=channel_id, part='contentDetails').execute()
-    ```
-
-- **Fetching Video IDs from the Playlist**: A loop retrieves 50 video IDs per request.
-    ```python
-    next_page_token = None
-    while True:
-        pl_request = youtube.playlistItems().list(
-            part='contentDetails',
-            playlistId=playlist_id,
-            maxResults=50,
-            pageToken=next_page_token
-        )
-        pl_response = pl_request.execute()
-
-        for item in pl_response['items']:
-            video_ids.append(item['contentDetails']['videoId'])
-
-        next_page_token = pl_response.get('nextPageToken')
-        if not next_page_token:
-            break
-
-    return video_ids
-    ```
-
-#### b. YouTube Transcript API - Scraping Transcripts
-
-- This uses the `youtube_transcript_api` to scrape transcripts from the retrieved video IDs.
-
----
-
-### 2. Langchain - Processing and Storing the Transcripts
-
-Langchain is used to:
-- Load the transcripts.
-- Split the transcripts into manageable chunks.
-- Embed the text for efficient retrieval.
-- Store the documents for use in RAG.
+For more details on each step, see the [Technical Documentation](docs/technical_details.md).
 
 ---
 
