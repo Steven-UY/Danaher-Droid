@@ -178,7 +178,8 @@ while True:
 
     # Print the response
     print("\nAI Response:")
-    print(response['text'])     
+    print(response['text'])    
+```
 ---
 
 This document outlines the core technical components of the Danaher-Droid. For further details on setup and usage, refer to the main [README](../README.md).
