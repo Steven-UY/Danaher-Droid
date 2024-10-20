@@ -1,33 +1,36 @@
 # Danaher-Droid
+
+## Overview
+
+I **suck** at Jiu-Jitsu and hate having to sift through all the instructionals online—my attention span is too bad. Hence, I wanted to design a tool that could help me not be so bad. With Danaher-Droid, I hope that I can effectively perform retrieval augmented generation (RAG) on transcripts contained within the BJJ Fanatics YouTube channel. 
+
+So, it's not really Danaher-Droid—more like BJJ Fanatics Droid—but whatever, Danaher sounds better.
+
+### Goals:
+- Have the LLM respond with accurate answers when asked about any BJJ position.
+- Have responses in John Danaher’s voice.
+- Create a tool that looks somewhat presentable.
+
 ---
-### Overview
 
-I **suck** at Jiu-Jitsu and hate having to sift through all the instructionals online my attention span is too bad. Hence, I wanted to design a tool that could help me
-not be so bad. With Danaher-Droid I hope that I can effectively perform retrieval augmented generation on transcripts contained within the BJJ Fanatics youtube channel.
-So it's not really Danaher-Droid more like BJJ Fanatics droid but whatever Danaher sounds better.
+## Tech Stack
 
-With the Danaher-Droid I hope to:
+### 1. RAG Pipeline
 
- - Have the LLM respond with the right answers when asked about any BJJ position
- - To talk in John Danaher's voice
- - Look somewhat presentable
+#### a. YouTube Data API - Retrieving Video IDs
 
-### Tech Stack
+- **API Client Setup**: Use the `googleapiclient` library to build the API client for making authorized requests.
+    ```python
+    youtube = build('youtube', 'v3', developerKey=api_key)
+    ```
 
- #### RAG Pipeline
- 1. Youtube Data API gets list of all the video_ids in the upload playlist
-   - build imported from **googleapiclient** library creates client so we can make authorized requests to the api 
- ```python 
- youtube = build('youtube', 'v3', developerKey=api_key)
- ```
-   - Requests made to API through **channels().list, playlistItems().list**
+- **Fetching the Uploads Playlist**: Get the `uploads` playlist ID from the channel.
+    ```python
+    res = youtube.channels().list(id=channel_id, part='contentDetails').execute()
+    ```
 
-**gets the ID of uploads playlist** 
- ```
- python res = youtube.channels().list(id=channel_id, part='contentDetails').execute()
- ```
- **creates loop where in each iteration we get 50 video ids in playlist**
- ```python 
+- **Fetching Video IDs from the Playlist**: A loop retrieves 50 video IDs per request.
+    ```python
     next_page_token = None
     while True:
         pl_request = youtube.playlistItems().list(
@@ -46,13 +49,32 @@ With the Danaher-Droid I hope to:
             break
 
     return video_ids
-  ```
- 2. youtube_transcript_api scrapes transcripts from youtube videos 
+    ```
 
-![Alt Text](https://external-content.duckduckgo.com/iu/?u=http%3A%2F%2Fbjjfanatics.com%2Fcdn%2Fshop%2Farticles%2FJohn-Danaher_1024x1024.jpg%3Fv%3D1547846343&f=1&nofb=1&ipt=862a15c76eaabc76cb5947675f934a0b76f093a22f76af2ad26315467c3f2fa0&ipo=images)
+#### b. YouTube Transcript API - Scraping Transcripts
 
-3. Langchain Loads, Splits, Embeds and stores the document of transcripts
+- This uses the `youtube_transcript_api` to scrape transcripts from the retrieved video IDs.
 
- - 
+---
 
+### 2. Langchain - Processing and Storing the Transcripts
 
+Langchain is used to:
+- Load the transcripts.
+- Split the transcripts into manageable chunks.
+- Embed the text for efficient retrieval.
+- Store the documents for use in RAG.
+
+---
+
+## Future Features
+
+- Add a graphical user interface (GUI).
+- Improve transcript analysis to ensure more accurate responses.
+- Fine-tune the LLM to better match John Danaher’s speech patterns.
+
+---
+
+## Image
+
+![John Danaher teaching Brazilian Jiu-Jitsu](https://external-content.duckduckgo.com/iu/?u=http%3A%2F%2Fbjjfanatics.com%2Fcdn%2Fshop%2Farticles%2FJohn-Danaher_1024x1024.jpg%3Fv%3D1547846343&f=1&nofb=1&ipt=862a15c76eaabc76cb5947675f934a0b76f093a22f76af2ad26315467c3f2fa0&ipo=images)

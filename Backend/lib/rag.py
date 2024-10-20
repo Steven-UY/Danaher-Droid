@@ -55,7 +55,7 @@ retriever = vectorstore.as_retriever(search_type="similarity", search_kwargs={"k
 
 llm = ChatOpenAI(model="gpt-4-0125-preview", temperature=0.3, max_tokens=1000)
 
-# Define prompt template
+# Prompt template we use for the RAG template 
 prompt_template = """
 You are an AI assistant knowledgeable about Jiu-Jitsu.
 
@@ -81,7 +81,7 @@ rag_chain = LLMChain(
     prompt=prompt
 )
 
-# Define a prompt for relevance checking
+#Prompt that we use for relevance checking
 relevance_prompt = PromptTemplate(
     input_variables=["question", "topic"],
     template="""
@@ -97,10 +97,12 @@ Is this question relevant to the topic? Respond with only 'Yes' or 'No'.
 # Create a chain for relevance checking
 relevance_chain = LLMChain(llm=llm, prompt=relevance_prompt)
 
+#checks if the question is relevant to the topic
 def is_question_relevant(question, topic):
     response = relevance_chain.run(question=question, topic=topic)
     return response.strip().lower() == 'yes'
 
+#formats list of docs into a single string, prepares inputs for the RAG chain
 def format_docs(docs):
     return "\n".join([doc.page_content for doc in docs])
 
@@ -109,6 +111,7 @@ conversation_history = []
 
 topic = "Jiu-Jitsu"  # Replace with your actual topic
 
+#main conversation loop
 while True:
     user_query = input("Enter your question (or 'quit' to exit): ")
     if user_query.lower() == 'quit':
@@ -146,5 +149,3 @@ while True:
     # Update the conversation history
     conversation_history.append({'role': 'user', 'content': user_query})
     conversation_history.append({'role': 'assistant', 'content': response['text']})
-
-print("Conversation ended.")
