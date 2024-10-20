@@ -127,15 +127,58 @@ This document provides detailed technical explanations and code snippets for how
     )
     # Create a chain for relevance checking
     relevance_chain = LLMChain(llm=llm, prompt=relevance_prompt)
+
+    #outline topic
+    topic = "Jiu-Jitsu"  
     ```
 
----
+#### g. Implement conversation history
+- Create conversation history
+    ```python
+    conversation_history = []
+    ```
+- Update conversation history concurrently
+    ```python
+    conversation_history.append({'role': 'user', 'content': user_query})
+    conversation_history.append({'role': 'assistant', 'content': response['text']})
+    ```
 
-## Future Enhancements
-- Improve transcript processing by implementing more advanced splitting techniques.
-- Fine-tune the LLM for better emulation of John Danaher's speech style.
-- Add a user-friendly graphical interface for easier interaction.
+#### h. Main Conversation Loop
+- Putting everything together, the conversation loop manages the interaction between the user and the AI.
+```python
+while True:
+    user_query = input("Enter your question (or 'quit' to exit): ")
+    if user_query.lower() == 'quit':
+        break
 
+    # Check relevance
+    if not is_question_relevant(user_query, topic):
+        print("\nAI Response:")
+        print("I'm sorry, but that question doesn't seem to be related to the topic I'm knowledgeable about. Could you please ask a question related to Jiu-Jitsu?")
+        continue
+
+    # Retrieve documents
+    docs = retriever.get_relevant_documents(user_query)
+
+    # Format conversation history
+    chat_history_formatted = ""
+    for message in conversation_history:
+        role = "User" if message['role'] == 'user' else "Assistant"
+        chat_history_formatted += f"{role}: {message['content']}\n"
+
+    # Prepare inputs for the chain
+    chain_inputs = {
+        "question": user_query,
+        "context": format_docs(docs),
+        "chat_history": chat_history_formatted
+    }
+
+    # Get the AI response
+    response = rag_chain(chain_inputs)
+
+    # Print the response
+    print("\nAI Response:")
+    print(response['text'])     
 ---
 
 This document outlines the core technical components of the Danaher-Droid. For further details on setup and usage, refer to the main [README](../README.md).

@@ -30,14 +30,6 @@ For more details on each step, see the [Technical Documentation](docs/tech_docs.
 
 ---
 
-## Future Features
-
-- Add a graphical user interface (GUI).
-- Improve transcript analysis to ensure more accurate responses.
-- Fine-tune the LLM to better match John Danaher’s speech patterns.
-
----
-
 ## Image
 
 ![John Danaher teaching Brazilian Jiu-Jitsu](https://external-content.duckduckgo.com/iu/?u=http%3A%2F%2Fbjjfanatics.com%2Fcdn%2Fshop%2Farticles%2FJohn-Danaher_1024x1024.jpg%3Fv%3D1547846343&f=1&nofb=1&ipt=862a15c76eaabc76cb5947675f934a0b76f093a22f76af2ad26315467c3f2fa0&ipo=images)
