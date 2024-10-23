@@ -5,10 +5,11 @@ import { Send } from 'lucide-react'
 import { Button } from "../ui/button"
 import { Textarea } from "../ui/textarea"
 import { ScrollArea } from "../ui/scroll-area"
+import axios from 'axios'  // Make sure to install axios: npm install axios
 
 type Message = {
-  content: string
-  sender: 'user' | 'bot'
+  content: string;
+  sender: 'user' | 'bot';
 }
 
 export default function ChatbotInterface() {
@@ -25,15 +26,28 @@ export default function ChatbotInterface() {
     }
   }, [messages])
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (input.trim()) {
-      setMessages([...messages, { content: input, sender: 'user' }])
-      // Here you would typically send the message to your chatbot backend
-      // and get a response. For this example, we'll just echo the message.
-      setTimeout(() => {
-        setMessages(prev => [...prev, { content: `You said: ${input}`, sender: 'bot' }])
-      }, 500)
+      const userMessage: Message = { content: input, sender: 'user' }
+      setMessages(prev => [...prev, userMessage])
       setInput('')
+
+      try {
+        const response = await axios.post('http://127.0.0.1:5000/chat', 
+          { message: input },
+          { 
+            headers: {
+              'Content-Type': 'application/json',
+            }
+          }
+        )
+        const botMessage: Message = { content: response.data.response, sender: 'bot' }
+        setMessages(prev => [...prev, botMessage])
+      } catch (error) {
+        console.error('Error sending message:', error)
+        const errorMessage: Message = { content: 'Sorry, there was an error processing your message.', sender: 'bot' }
+        setMessages(prev => [...prev, errorMessage])
+      }
     }
   }
 

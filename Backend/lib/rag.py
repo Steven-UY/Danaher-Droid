@@ -111,26 +111,16 @@ conversation_history = []
 
 topic = "Jiu-Jitsu"  # Replace with your actual topic
 
-#main conversation loop
-while True:
-    user_query = input("Enter your question (or 'quit' to exit): ")
-    if user_query.lower() == 'quit':
-        break
-
+def process_query(user_query):
     # Check relevance
     if not is_question_relevant(user_query, topic):
-        print("\nAI Response:")
-        print("I'm sorry, but that question doesn't seem to be related to the topic I'm knowledgeable about. Could you please ask a question related to Jiu-Jitsu?")
-        continue
+        return "I'm sorry, but that question doesn't seem to be related to Jiu-Jitsu. Could you please ask a question related to Jiu-Jitsu?"
 
     # Retrieve documents
     docs = retriever.get_relevant_documents(user_query)
 
-    # Format conversation history
-    chat_history_formatted = ""
-    for message in conversation_history:
-        role = "User" if message['role'] == 'user' else "Assistant"
-        chat_history_formatted += f"{role}: {message['content']}\n"
+    # Format conversation history (you might need to adjust this part)
+    chat_history_formatted = ""  # You may want to pass conversation history from the frontend
 
     # Prepare inputs for the chain
     chain_inputs = {
@@ -142,10 +132,4 @@ while True:
     # Get the AI response
     response = rag_chain(chain_inputs)
 
-    # Print the response
-    print("\nAI Response:")
-    print(response['text'])  # Adjust based on the output format
-
-    # Update the conversation history
-    conversation_history.append({'role': 'user', 'content': user_query})
-    conversation_history.append({'role': 'assistant', 'content': response['text']})
+    return response['text']
