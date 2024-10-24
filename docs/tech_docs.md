@@ -210,7 +210,8 @@ if request.method == 'OPTIONS':
     response.headers.add('Access-Control-Allow-Origin', request.headers.get('Origin', '*'))
     response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
     response.headers.add('Access-Control-Allow-Methods', 'POST')
-    return response;```
+    return response;
+    ```
 
 - The blocks returns a simple **200 OK** response to tell the browser it is safe to proceed.
 
