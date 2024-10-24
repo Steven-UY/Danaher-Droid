@@ -199,6 +199,22 @@ a. `/chat` Endpoint
 
 ```@app.route('/chat', methods=['POST', 'OPTIONS'])```
 
+- The OPTIONS request method is typically used in **CORS preflight requests**. A preflight request is sent by the browser to check if the server allows the request being sent (in this case the POST) before sending it, particularly if the frontend is operating at a different origin.
+
+2. OPTIONS Block
+
+```typescript
+if request.method == 'OPTIONS':
+    # Handling preflight request
+    response = jsonify({'status': 'OK'})
+    response.headers.add('Access-Control-Allow-Origin', request.headers.get('Origin', '*'))
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
+    response.headers.add('Access-Control-Allow-Methods', 'POST')
+    return response;```
+
+- The blocks returns a simple **200 OK** response to tell the browser it is safe to proceed.
+
+
 
 
 
