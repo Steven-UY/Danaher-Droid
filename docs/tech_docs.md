@@ -211,7 +211,7 @@ if request.method == 'OPTIONS':
     response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
     response.headers.add('Access-Control-Allow-Methods', 'POST')
     return response;
-    ```
+```
 
 - The blocks returns a simple **200 OK** response to tell the browser it is safe to proceed.
 
