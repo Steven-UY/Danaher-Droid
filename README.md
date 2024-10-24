@@ -15,6 +15,8 @@ So, it's not really Danaher-Droid—more like BJJ Fanatics Droid—but whatever,
 
 ## Tech Stack
 
+### Backend
+
 ### 1. YouTube Data API
 - Retrieve video IDs from the BJJ Fanatics channel using the YouTube Data API.
 
@@ -27,6 +29,14 @@ So, it's not really Danaher-Droid—more like BJJ Fanatics Droid—but whatever,
 - Implement the RAG chain to generate LLM responses.
 
 For more details on each step, see the [Technical Documentation](docs/tech_docs.md).
+
+### Frontend
+
+### Next.js
+- **Next.js**: The frontend of the project is built using Next.js, a React framework that provides server-side rendering and static site generation for enhanced performance and SEO.
+  - **React**: For building reusable UI components.
+  - **API Routes**: Used for handling requests from the frontend to the backend, such as querying the transcript database and interacting with the RAG chain.
+  - **Styling**: (Specify if you're using any CSS framework or styling solution like Tailwind CSS, styled-components, or plain CSS).
 
 ---
 

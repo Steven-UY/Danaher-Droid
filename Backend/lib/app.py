@@ -14,7 +14,7 @@ def chat():
         response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
         response.headers.add('Access-Control-Allow-Methods', 'POST')
         return response
-
+    
     #this extracts the user's message from the JSON payload of the request  
     data = request.json
     user_query = data.get('message')
