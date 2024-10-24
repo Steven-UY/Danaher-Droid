@@ -28,7 +28,7 @@ So, it's not really Danaher-Droid—more like BJJ Fanatics Droid—but whatever,
 - Store transcripts in a vector database using Chroma.
 - Implement the RAG chain to generate LLM responses.
 
-For more details on each step, see the [Technical Documentation](docs/tech_docs.md).
+---
 
 ### Frontend
 
@@ -37,6 +37,8 @@ For more details on each step, see the [Technical Documentation](docs/tech_docs.
   - **React**: For building reusable UI components.
   - **API Routes**: Used for handling requests from the frontend to the backend, such as querying the transcript database and interacting with the RAG chain.
   - **Styling**: (Specify if you're using any CSS framework or styling solution like Tailwind CSS, styled-components, or plain CSS).
+
+  For more details on each step, see the [Technical Documentation](docs/tech_docs.md).
 
 ---
 
