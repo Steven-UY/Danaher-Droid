@@ -3,7 +3,7 @@ from flask_cors import CORS
 from rag import process_query  # Import your RAG function
 
 app = Flask(__name__)
-CORS(app, resources={r"/chat": {"origins": ["http://localhost:3000", "http://127.0.0.1:3000"]}})
+CORS(app, resources={r"/chat": {"origins": ["http://localhost:3000"]}})
 
 @app.route('/chat', methods=['POST', 'OPTIONS'])
 def chat():
@@ -23,6 +23,7 @@ def chat():
     response = process_query(user_query)
     
     return jsonify({'response': response})
+
 
 @app.after_request
 def after_request(response):

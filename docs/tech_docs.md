@@ -187,14 +187,13 @@ The Flask API serves as the backend for processing the user queries through the 
 It also handles Cross-Origin Resource Sharing (CORS) for communication with the frontend by processing
 incoming requests to generate a response from the RAG pipeline.
 
-### Endpoints
-
 #### Base URL
 - Localhost: **http://127.0.0.1:5000**
 
 #### Endpoints
 
-- POST **/chat**
+- `/chat` Endpoint
+
 
 This endpoint processes user queries via the GET request sent by the frontend and returns a response.
 
