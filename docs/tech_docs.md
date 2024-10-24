@@ -192,10 +192,16 @@ incoming requests to generate a response from the RAG pipeline.
 
 #### Endpoints
 
-- `/chat` Endpoint
+a. `/chat` Endpoint
+- This endpoint is designed to handle two types of HTTP requests **POST** and **OPTIONS**. Here's a detailed description of each part.
+
+1. OPTIONS requests(CORS preflight)
+
+```@app.route('/chat', methods=['POST', 'OPTIONS'])```
 
 
-This endpoint processes user queries via the GET request sent by the frontend and returns a response.
+
+
 
 
 
