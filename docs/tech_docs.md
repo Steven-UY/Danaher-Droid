@@ -207,15 +207,27 @@ a. `/chat` Endpoint
 if request.method == 'OPTIONS':
     # Handling preflight request
     response = jsonify({'status': 'OK'})
-    response.headers.add('Access-Control-Allow-Origin', request.headers.get('Origin', '*'))
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
-    response.headers.add('Access-Control-Allow-Methods', 'POST')
+    response.headers.add('Access-Control-Allow-Origin', request.headers.get('Origin', '*'))# Allows requests from the origin at frontend
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type')#Allows Content-Type header from request
+    response.headers.add('Access-Control-Allow-Methods', 'POST')#POST requests allowed
     return response;
 ```
 
 - The blocks returns a simple **200 OK** response to tell the browser it is safe to proceed.
 
+3. Handling Post Requests
 
+```typescript
+data = request.json
+user_query = data.get('message')
+
+# Process the query using your RAG pipeline
+response = process_query(user_query)
+
+return jsonify({'response': response})
+```
+
+- This extracts JSON data from the request, calls on the process_query function in the RAG pipeline. Then the response from the RAG pipeline is sent back to the client as a JSON object using jsonify.
 
 
 

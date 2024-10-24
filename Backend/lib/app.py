@@ -24,7 +24,7 @@ def chat():
     
     return jsonify({'response': response})
 
-
+#This code blocks creates output in terminal for debugging purposes 
 @app.after_request
 def after_request(response):
     print(f"Request from origin: {request.headers.get('Origin')}")
