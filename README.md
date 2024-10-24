@@ -32,7 +32,6 @@ So, it's not really Danaher-Droid—more like BJJ Fanatics Droid—but whatever,
 
 ### Frontend
 
-### Next.js
 - **Next.js**: The frontend of the project is built using Next.js, a React framework that provides server-side rendering and static site generation for enhanced performance and SEO.
   - **React**: For building reusable UI components.
   - **API Routes**: Used for handling requests from the frontend to the backend, such as querying the transcript database and interacting with the RAG chain.
