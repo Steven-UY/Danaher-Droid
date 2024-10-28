@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useLayoutEffect } from 'react'
 import { Send } from 'lucide-react'
 import { Button } from "../ui/button"
 import { Textarea } from "../ui/textarea"
@@ -20,14 +20,21 @@ export default function ChatbotInterface() {
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  useEffect(() => {
+  const scrollToBottom = () => {
     if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight
+      const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]')
+      if (scrollContainer) {
+        scrollContainer.scrollTop = scrollContainer.scrollHeight
+      }
     }
+  }
+
+  useLayoutEffect(() => {
+    scrollToBottom()
   }, [messages])
 
   const handleSend = async () => {
-    if (input.trim()) {
+    if (input.trim()) { //if input is empty the function exits early skipping entire block
       const userMessage: Message = { content: input, sender: 'user' }
       setMessages(prev => [...prev, userMessage])
       setInput('')
@@ -58,6 +65,7 @@ export default function ChatbotInterface() {
     }
   }
 
+  //represents the return statement of the functional component
   return (
     <div className="flex flex-col h-screen w-full bg-background">
       <div className="flex-1 overflow-hidden w-full">
