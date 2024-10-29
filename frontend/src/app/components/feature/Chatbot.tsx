@@ -1,10 +1,11 @@
 'use client'
 
 import { useState, useRef, useLayoutEffect } from 'react'
-import { Send } from 'lucide-react'
+import { Send, Phone} from 'lucide-react'
 import { Button } from "../ui/button"
 import { Textarea } from "../ui/textarea"
 import { ScrollArea } from "../ui/scroll-area"
+import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar" 
 import axios from 'axios'  // Make sure to install axios: npm install axios
 
 type Message = {
@@ -14,7 +15,7 @@ type Message = {
 
 export default function ChatbotInterface() {
   const [messages, setMessages] = useState<Message[]>([
-    { content: "Hello! How can I assist you today?", sender: 'bot' }
+    { content: "You’re on the mats with John Danaher after class, watching him replay a recent grappling match on his tablet. Kneeling beside him, he’s completely absorbed, eyes locked on the screen as he breaks down each move in silence. The quiet echoes of the video fill the gym, and you sit nearby, waiting, knowing he’ll share his insights once he’s ready to speak.", sender: 'bot' }
   ])
   const [input, setInput] = useState('')
   const scrollAreaRef = useRef<HTMLDivElement>(null)
@@ -34,7 +35,7 @@ export default function ChatbotInterface() {
   }, [messages])
 
   const handleSend = async () => {
-    if (input.trim()) { //if input is empty the function exits early skipping entire block
+    if (input.trim()) {
       const userMessage: Message = { content: input, sender: 'user' }
       setMessages(prev => [...prev, userMessage])
       setInput('')
@@ -64,55 +65,65 @@ export default function ChatbotInterface() {
       handleSend()
     }
   }
-
-  //represents the return statement of the functional component
+  
   return (
-    <div className="flex flex-col h-screen w-full bg-background">
-      <div className="flex-1 overflow-hidden w-full">
-        <ScrollArea ref={scrollAreaRef} className="h-full w-full p-4 space-y-4">
+    <div className="flex flex-col h-screen w-screen items-center bg-zinc-900 text-zinc-100 overflow-x-hidden">
+      <div className="max-w-xl w-full mx-auto flex flex-col h-full bg-zinc-900">
+        <div className="p-4 border-zinc-800">
+          {/* Centered Avatar, Name, and Subtitle */}
+          <div className="flex flex-col items-center space-y-2">
+            <Avatar className="w-16 h-16">
+              <AvatarImage src="/placeholder.svg?height=64&width=64" alt="John Danaher" />
+              <AvatarFallback>IR</AvatarFallback>
+            </Avatar>
+            <h2 className="text-2xl font-bold">John Danaher</h2>
+            <p className="text-zinc-400">Only Wears Rashguards.</p>
+          </div>
+        </div>
+        <ScrollArea ref={scrollAreaRef} className="flex-1 px-4 py-0 overflow-x-hidden">
           {messages.map((message, index) => (
             <div
               key={index}
-              className={`flex w-full ${
+              className={`flex mb-4 ${
                 message.sender === 'user' ? 'justify-end' : 'justify-start'
               }`}
             >
               <div
-                className={`max-w-[80%] rounded-lg px-4 py-2 ${
+                className={`max-w-[70%] rounded-lg px-4 py-2 ${
                   message.sender === 'user'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted'
+                    ? 'bg-zinc-700 text-zinc-100'
+                    : 'bg-zinc-800 text-zinc-100'
                 }`}
               >
-                {message.content}
+                {message.content.split('\n').map((line, i) => (
+                  <p key={i}>{line}</p>
+                ))}
               </div>
             </div>
           ))}
         </ScrollArea>
-      </div>
-      <div className="border-t bg-background p-4 w-full">
-        <form
-          onSubmit={(e) => {
-            e.preventDefault()
-            handleSend()
-          }}
-          className="flex items-end space-x-2 w-full"
-        >
-          <Textarea
-            ref={textareaRef}
-            placeholder="Type your message..."
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            className="flex-grow min-h-[60px] max-h-[200px] resize-none"
-            rows={1}
-          />
-          <Button type="submit" size="icon" className="h-[60px] w-[60px]">
-            <Send className="h-6 w-6" />
-            <span className="sr-only">Send</span>
-          </Button>
-        </form>
+        <div className="border-zinc-800 p-4">
+          <div className="flex items-center space-x-2">
+            <Textarea
+              ref={textareaRef}
+              placeholder="Ask John Danaher a question..."
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              className="flex-grow bg-zinc-800 text-zinc-100 border-none focus:ring-0"
+              rows={1}
+            />
+            <Button onClick={handleSend} size="icon" className="bg-zinc-700 hover:bg-zinc-600">
+              <Send className="h-4 w-4" />
+              <span className="sr-only">Send</span>
+            </Button>
+            <Button size="icon" className="bg-zinc-700 hover:bg-zinc-600">
+              <Phone className="h-4 w-4" />
+              <span className="sr-only">Call</span>
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
-  )
+  );  
 }
