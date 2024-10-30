@@ -1,12 +1,12 @@
-'use client'
+"use client";
 
-import { useState, useRef, useLayoutEffect } from 'react'
-import { Send, Phone} from 'lucide-react'
+import { useState, useRef, useLayoutEffect, useEffect } from 'react'
+import { Send, Phone } from 'lucide-react'
 import { Button } from "../ui/button"
 import { Textarea } from "../ui/textarea"
 import { ScrollArea } from "../ui/scroll-area"
 import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar" 
-import axios from 'axios'  // Make sure to install axios: npm install axios
+import axios from 'axios' 
 
 type Message = {
   content: string;
@@ -15,11 +15,11 @@ type Message = {
 
 export default function ChatbotInterface() {
   const [messages, setMessages] = useState<Message[]>([
-    { content: "You’re on the mats with John Danaher after class, watching him replay a recent grappling match on his tablet. Kneeling beside him, he’s completely absorbed, eyes locked on the screen as he breaks down each move in silence. The quiet echoes of the video fill the gym, and you sit nearby, waiting, knowing he’ll share his insights once he’s ready to speak.", sender: 'bot' }
+    { content: "You’re on the mats with John Danaher after class...", sender: 'bot' }
   ])
   const [input, setInput] = useState('')
+  const [displayedMessage, setDisplayedMessage] = useState<string>('')
   const scrollAreaRef = useRef<HTMLDivElement>(null)
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const scrollToBottom = () => {
     if (scrollAreaRef.current) {
@@ -32,7 +32,7 @@ export default function ChatbotInterface() {
 
   useLayoutEffect(() => {
     scrollToBottom()
-  }, [messages])
+  }, [messages, displayedMessage])
 
   const handleSend = async () => {
     if (input.trim()) {
@@ -51,6 +51,7 @@ export default function ChatbotInterface() {
         )
         const botMessage: Message = { content: response.data.response, sender: 'bot' }
         setMessages(prev => [...prev, botMessage])
+        simulateTypingEffect(response.data.response) // Trigger line-by-line typing effect
       } catch (error) {
         console.error('Error sending message:', error)
         const errorMessage: Message = { content: 'Sorry, there was an error processing your message.', sender: 'bot' }
@@ -65,15 +66,28 @@ export default function ChatbotInterface() {
       handleSend()
     }
   }
-  
+
+  const simulateTypingEffect = (text: string) => {
+    let index = 0
+    setDisplayedMessage('') // Clear displayed message before typing effect starts
+
+    const typingInterval = setInterval(() => {
+      if (index < text.length) {
+        setDisplayedMessage((prev) => prev + text[index])
+        index++
+      } else {
+        clearInterval(typingInterval)
+      }
+    }, 10) // Adjust typing speed by changing the interval time
+  }
+
   return (
     <div className="flex flex-col h-screen w-screen items-center bg-zinc-900 text-zinc-100 overflow-x-hidden">
-      <div className="max-w-xl w-full mx-auto flex flex-col h-full bg-zinc-900">
+      <div className="max-w-2xl w-full mx-auto flex flex-col h-full bg-zinc-900">
         <div className="p-4 border-zinc-800">
-          {/* Centered Avatar, Name, and Subtitle */}
           <div className="flex flex-col items-center space-y-2">
-            <Avatar className="w-16 h-16">
-              <AvatarImage src="/placeholder.svg?height=64&width=64" alt="John Danaher" />
+            <Avatar className="w-20 h-20">
+              <AvatarImage src="/assets/danaher.jpg" alt="John Danaher" />
               <AvatarFallback>IR</AvatarFallback>
             </Avatar>
             <h2 className="text-2xl font-bold">John Danaher</h2>
@@ -95,9 +109,8 @@ export default function ChatbotInterface() {
                     : 'bg-zinc-800 text-zinc-100'
                 }`}
               >
-                {message.content.split('\n').map((line, i) => (
-                  <p key={i}>{line}</p>
-                ))}
+                {message.sender === 'bot' && index === messages.length - 1 && index !== 0 ? displayedMessage : message.content // Render initial message fully
+                }
               </div>
             </div>
           ))}
@@ -105,7 +118,6 @@ export default function ChatbotInterface() {
         <div className="border-zinc-800 p-4">
           <div className="flex items-center space-x-2">
             <Textarea
-              ref={textareaRef}
               placeholder="Ask John Danaher a question..."
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -125,5 +137,5 @@ export default function ChatbotInterface() {
         </div>
       </div>
     </div>
-  );  
+  )  
 }

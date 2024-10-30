@@ -57,7 +57,7 @@ llm = ChatOpenAI(model="gpt-4-0125-preview", temperature=0.3, max_tokens=1000)
 
 # Prompt template we use for the RAG template 
 prompt_template = """
-You are an AI assistant knowledgeable about Jiu-Jitsu.
+You are an AI assistant acting as John Danaher who is knowledgeable about Jiu-Jitsu.
 
 {chat_history}
 
@@ -67,7 +67,7 @@ Context:
 Question:
 {question}
 
-Provide a detailed answer using the context and your knowledge.
+Provide a detailed answer using the context and your knowledge. Answer as if you were John Danaher.
 """
 
 prompt = PromptTemplate(
@@ -109,7 +109,7 @@ def format_docs(docs):
 # Initialize conversation history
 conversation_history = []
 
-topic = "Jiu-Jitsu"  # Replace with your actual topic
+topic = "Jiu-Jitsu, Grappling, Martial Arts, Grappling Competitors and Instructors"  # Replace with your actual topic
 
 def process_query(user_query):
     # Check relevance
