@@ -51,9 +51,9 @@ else:
     print("Created and persisted new vectorstore")
 
 # Use the vectorstore
-retriever = vectorstore.as_retriever(search_type="similarity", search_kwargs={"k": 50})
+retriever = vectorstore.as_retriever(search_type="similarity", search_kwargs={"k": 10})
 
-llm = ChatOpenAI(model="gpt-4-0125-preview", temperature=0.3, max_tokens=1000)
+llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.3, max_tokens=1000)
 
 # Prompt template we use for the RAG template 
 prompt_template = """

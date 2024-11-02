@@ -1,85 +1,125 @@
 "use client";
 
-import { useState, useRef, useLayoutEffect, useEffect } from 'react'
-import { Send, Phone } from 'lucide-react'
-import { Button } from "../ui/button"
-import { Textarea } from "../ui/textarea"
-import { ScrollArea } from "../ui/scroll-area"
-import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar" 
-import axios from 'axios' 
+import { useState, useRef, useLayoutEffect, useEffect } from 'react';
+import { Send, Phone } from 'lucide-react';
+import { Button } from "../ui/button";
+import { Textarea } from "../ui/textarea";
+import { ScrollArea } from "../ui/scroll-area";
+import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar";
+import axios from 'axios';
 
 type Message = {
   content: string;
   sender: 'user' | 'bot';
-}
+};
 
 export default function ChatbotInterface() {
   const [messages, setMessages] = useState<Message[]>([
     { content: "You’re on the mats with John Danaher after class...", sender: 'bot' }
-  ])
-  const [input, setInput] = useState('')
-  const [displayedMessage, setDisplayedMessage] = useState<string>('')
-  const scrollAreaRef = useRef<HTMLDivElement>(null)
+  ]);
+  const [input, setInput] = useState('');
+  const [displayedMessage, setDisplayedMessage] = useState<string>('');
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const [isLoading, setIsLoading] = useState(false); // For loading animation
+  const [isTyping, setIsTyping] = useState(false); // For typing effect
+  const [isAtBottom, setIsAtBottom] = useState(true);
+
 
   const scrollToBottom = () => {
-    if (scrollAreaRef.current) {
-      const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]')
+    if (isAtBottom && scrollAreaRef.current) {
+      const scrollContainer = scrollAreaRef.current.querySelector(
+        '[data-radix-scroll-area-viewport]'
+      );
       if (scrollContainer) {
-        scrollContainer.scrollTop = scrollContainer.scrollHeight
+        scrollContainer.scrollTop = scrollContainer.scrollHeight;
       }
     }
-  }
+  };
+  
 
   useLayoutEffect(() => {
-    scrollToBottom()
-  }, [messages, displayedMessage])
+    scrollToBottom();
+  }, [messages, displayedMessage]);
 
   const handleSend = async () => {
     if (input.trim()) {
-      const userMessage: Message = { content: input, sender: 'user' }
-      setMessages(prev => [...prev, userMessage])
-      setInput('')
+      const userMessage: Message = { content: input, sender: 'user' };
+      setMessages((prev) => [...prev, userMessage]);
+      setInput('');
+      setIsLoading(true); // Start loading indicator
 
       try {
-        const response = await axios.post('http://127.0.0.1:5000/chat', 
+        const response = await axios.post(
+          'http://127.0.0.1:5000/chat',
           { message: input },
-          { 
+          {
             headers: {
               'Content-Type': 'application/json',
-            }
+            },
           }
-        )
-        const botMessage: Message = { content: response.data.response, sender: 'bot' }
-        setMessages(prev => [...prev, botMessage])
-        simulateTypingEffect(response.data.response) // Trigger line-by-line typing effect
+        );
+        setIsLoading(false); // Stop loading indicator immediately after response
+        simulateTypingEffect(response.data.response); // Start typing effect
       } catch (error) {
-        console.error('Error sending message:', error)
-        const errorMessage: Message = { content: 'Sorry, there was an error processing your message.', sender: 'bot' }
-        setMessages(prev => [...prev, errorMessage])
+        console.error('Error sending message:', error);
+        const errorMessage: Message = {
+          content: 'Sorry, there was an error processing your message.',
+          sender: 'bot',
+        };
+        setMessages((prev) => [...prev, errorMessage]);
+        setIsLoading(false); // Stop loading indicator on error
       }
     }
-  }
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      handleSend()
+      e.preventDefault();
+      handleSend();
     }
-  }
+  };
 
   const simulateTypingEffect = (text: string) => {
-    let index = 0
-    setDisplayedMessage('') // Clear displayed message before typing effect starts
+    let index = 0;
+    setDisplayedMessage(''); // Clear displayed message before typing effect starts
+    setIsTyping(true); // Start typing effect
 
     const typingInterval = setInterval(() => {
       if (index < text.length) {
-        setDisplayedMessage((prev) => prev + text[index])
-        index++
+        setDisplayedMessage((prev) => prev + text[index]);
+        index++;
       } else {
-        clearInterval(typingInterval)
+        clearInterval(typingInterval);
+        // After typing effect is done, add the full message to messages
+        const botMessage: Message = { content: text, sender: 'bot' };
+        setMessages((prev) => [...prev, botMessage]);
+        setDisplayedMessage(''); // Clear displayedMessage
+        setIsTyping(false); // Stop typing effect
       }
-    }, 10) // Adjust typing speed by changing the interval time
-  }
+    }, 5); // Adjust typing speed by changing the interval time
+  };
+
+  useEffect(() => {
+    const scrollContainer = scrollAreaRef.current?.querySelector(
+      '[data-radix-scroll-area-viewport]'
+    );
+  
+    if (scrollContainer) {
+      const handleScroll = () => {
+        const { scrollTop, scrollHeight, clientHeight } = scrollContainer;
+        const isUserAtBottom = scrollTop + clientHeight >= scrollHeight - 10; // Threshold of 10px
+        setIsAtBottom(isUserAtBottom);
+      };
+  
+      scrollContainer.addEventListener('scroll', handleScroll);
+  
+      // Cleanup the event listener
+      return () => {
+        scrollContainer.removeEventListener('scroll', handleScroll);
+      };
+    }
+  }, []);
+  
 
   return (
     <div className="flex flex-col h-screen w-screen items-center bg-zinc-900 text-zinc-100 overflow-x-hidden">
@@ -109,11 +149,41 @@ export default function ChatbotInterface() {
                     : 'bg-zinc-800 text-zinc-100'
                 }`}
               >
-                {message.sender === 'bot' && index === messages.length - 1 && index !== 0 ? displayedMessage : message.content // Render initial message fully
-                }
+                {message.content}
               </div>
             </div>
           ))}
+
+          {/* Loading Animation */}
+          {isLoading && (
+            <div className="flex mb-4 justify-start">
+              <div className="max-w-[70%] rounded-lg px-4 py-2 bg-zinc-800 text-zinc-100">
+                <div className="flex space-x-1">
+                  <div
+                    className="h-2 w-2 bg-zinc-100 rounded-full animate-loading"
+                    style={{ animationDelay: '0s' }}
+                  ></div>
+                  <div
+                    className="h-2 w-2 bg-zinc-100 rounded-full animate-loading"
+                    style={{ animationDelay: '0.2s' }}
+                  ></div>
+                  <div
+                    className="h-2 w-2 bg-zinc-100 rounded-full animate-loading"
+                    style={{ animationDelay: '0.4s' }}
+                  ></div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Typing Effect */}
+          {isTyping && displayedMessage && (
+            <div className="flex mb-4 justify-start">
+              <div className="max-w-[70%] rounded-lg px-4 py-2 bg-zinc-800 text-zinc-100">
+                {displayedMessage}
+              </div>
+            </div>
+          )}
         </ScrollArea>
         <div className="border-zinc-800 p-4">
           <div className="flex items-center space-x-2">
@@ -137,5 +207,5 @@ export default function ChatbotInterface() {
         </div>
       </div>
     </div>
-  )  
+  );
 }
