@@ -3,9 +3,6 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_chroma import Chroma
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from dotenv import load_dotenv
-from langchain import hub
-from langchain_core.output_parsers import StrOutputParser
-from langchain_core.runnables import RunnablePassthrough
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
 import os
@@ -51,7 +48,7 @@ else:
     print("Created and persisted new vectorstore")
 
 # Use the vectorstore
-retriever = vectorstore.as_retriever(search_type="similarity", search_kwargs={"k": 10})
+retriever = vectorstore.as_retriever(search_type="similarity", search_kwargs={"k": 35})
 
 llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.3, max_tokens=1000)
 
@@ -67,7 +64,7 @@ Context:
 Question:
 {question}
 
-Provide a detailed answer using the context and your knowledge. Answer as if you were John Danaher.
+Provide a detailed answer using the context and your knowledge.
 """
 
 prompt = PromptTemplate(
@@ -75,13 +72,12 @@ prompt = PromptTemplate(
     template=prompt_template
 )
 
-# Create LLMChain without memory
 rag_chain = LLMChain(
     llm=llm,
     prompt=prompt
 )
 
-#Prompt that we use for relevance checking
+# Prompt that we use for relevance checking
 relevance_prompt = PromptTemplate(
     input_variables=["question", "topic"],
     template="""
@@ -97,39 +93,42 @@ Is this question relevant to the topic? Respond with only 'Yes' or 'No'.
 # Create a chain for relevance checking
 relevance_chain = LLMChain(llm=llm, prompt=relevance_prompt)
 
-#checks if the question is relevant to the topic
+# Checks if the question is relevant to the topic
 def is_question_relevant(question, topic):
     response = relevance_chain.run(question=question, topic=topic)
     return response.strip().lower() == 'yes'
 
-#formats list of docs into a single string, prepares inputs for the RAG chain
+# Formats list of docs into a single string, prepares inputs for the RAG chain
 def format_docs(docs):
     return "\n".join([doc.page_content for doc in docs])
 
-# Initialize conversation history
-conversation_history = []
+# Define your topic
+topic = "Jiu-Jitsu, Grappling, Martial Arts, John Danaher(myself), Judo, Wrestling"
 
-topic = "Jiu-Jitsu, Grappling, Martial Arts, Grappling Competitors and Instructors"  # Replace with your actual topic
-
-def process_query(user_query):
+def process_query(user_query, history):
     # Check relevance
     if not is_question_relevant(user_query, topic):
-        return "I'm sorry, but that question doesn't seem to be related to Jiu-Jitsu. Could you please ask a question related to Jiu-Jitsu?"
+        return "I'm sorry, but that question isn't relevant to making you a better grappler. Can you ask a more relevant question?"
 
-    # Retrieve documents
+    # Retrieve relevant documents
     docs = retriever.get_relevant_documents(user_query)
 
-    # Format conversation history (you might need to adjust this part)
-    chat_history_formatted = ""  # You may want to pass conversation history from the frontend
+    # Format the conversation history
+    formatted_history = "\n".join([
+        f"User: {msg['content']}" if msg['sender'] == 'user' else f"John Danaher: {msg['content']}"
+        for msg in history
+    ])
 
     # Prepare inputs for the chain
     chain_inputs = {
+        "chat_history": formatted_history,
         "question": user_query,
-        "context": format_docs(docs),
-        "chat_history": chat_history_formatted
+        "context": format_docs(docs)
     }
 
-    # Get the AI response
+    # Get the response from the RAG chain
     response = rag_chain(chain_inputs)
 
     return response['text']
+
+

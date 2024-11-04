@@ -1,9 +1,20 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from rag import process_query  # Import your RAG function
+from typing import List
+import uuid
 
 app = Flask(__name__)
-CORS(app, resources={r"/chat": {"origins": ["http://localhost:3000"]}})
+
+# Configure CORS for specific routes and options
+CORS(app, resources={r"/chat": {"origins": "http://localhost:3000"}}, 
+     supports_credentials=True,
+     methods=["POST", "OPTIONS"],
+     allow_headers=["Content-Type"])
+
+
+# Store conversations in memory (replace with database for production)
+conversations = {}
 
 @app.route('/chat', methods=['POST', 'OPTIONS'])
 def chat():
@@ -13,18 +24,27 @@ def chat():
         response.headers.add('Access-Control-Allow-Origin', request.headers.get('Origin', '*'))
         response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
         response.headers.add('Access-Control-Allow-Methods', 'POST')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
         return response
-    
-    #this extracts the user's message from the JSON payload of the request  
+
+    # Process the user's message
     data = request.json
     user_query = data.get('message')
-    
-    # Process the query using your RAG pipeline
-    response = process_query(user_query)
-    
-    return jsonify({'response': response})
+    history = data.get('history', [])
 
-#This code blocks creates output in terminal for debugging purposes 
+    # **Remove the tuple conversion**
+    # formatted_history = [(msg['content'], msg['sender']) for msg in history]
+    formatted_history = history  # Pass history as a list of dicts
+
+    response = process_query(user_query, formatted_history)
+
+    # Add CORS headers for the main response
+    response = jsonify({'response': response})
+    response.headers.add('Access-Control-Allow-Origin', request.headers.get('Origin', '*'))
+    response.headers.add('Access-Control-Allow-Credentials', 'true')
+    return response
+
+# Debug output for request and response headers
 @app.after_request
 def after_request(response):
     print(f"Request from origin: {request.headers.get('Origin')}")
@@ -32,5 +52,4 @@ def after_request(response):
     return response
 
 if __name__ == '__main__':
-    # Run Flask server on localhost
     app.run(debug=True, host='127.0.0.1', port=5000)

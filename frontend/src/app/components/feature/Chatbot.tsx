@@ -46,20 +46,23 @@ export default function ChatbotInterface() {
       const userMessage: Message = { content: input, sender: 'user' };
       setMessages((prev) => [...prev, userMessage]);
       setInput('');
-      setIsLoading(true); // Start loading indicator
+      setIsLoading(true);
 
       try {
         const response = await axios.post(
           'http://127.0.0.1:5000/chat',
-          { message: input },
+          { 
+            message: input,
+            history: messages // Send full message history
+          },
           {
             headers: {
               'Content-Type': 'application/json',
             },
           }
         );
-        setIsLoading(false); // Stop loading indicator immediately after response
-        simulateTypingEffect(response.data.response); // Start typing effect
+        setIsLoading(false);
+        simulateTypingEffect(response.data.response);
       } catch (error) {
         console.error('Error sending message:', error);
         const errorMessage: Message = {
@@ -67,7 +70,7 @@ export default function ChatbotInterface() {
           sender: 'bot',
         };
         setMessages((prev) => [...prev, errorMessage]);
-        setIsLoading(false); // Stop loading indicator on error
+        setIsLoading(false);
       }
     }
   };
