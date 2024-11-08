@@ -53,7 +53,6 @@ export default function ChatbotInterface() {
           'http://127.0.0.1:5000/chat',
           { 
             message: input,
-            history: messages // Send full message history
           },
           {
             headers: {
