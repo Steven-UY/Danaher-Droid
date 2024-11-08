@@ -27,7 +27,7 @@ def mock_retriever():
     with patch('rag.retriever') as mock_retriever:
         mock_retriever.get_relevant_documents.return_value = MOCKED_DOCS
         yield mock_retriever
-
+        
 @pytest.fixture
 def mock_conversation_chain():
     """
