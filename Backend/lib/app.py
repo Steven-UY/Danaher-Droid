@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from rag import process_query, llm  # Import your RAG function
-from langchain.memory import ConversationSummaryMemory
+from langchain.memory import ConversationBufferMemory
 import uuid
 
 
@@ -17,16 +17,10 @@ CORS(app, resources={r"/chat": {"origins": "http://localhost:3000"}},
 # In-memory storage for sessions (use a persistent storage like Redis or a database for production)
 conversations = {}
 
-@app.route('/chat', methods=['POST', 'OPTIONS'])
+@app.route('/chat', methods=['POST'])
 def chat():
-    if request.method == 'OPTIONS':
-        # Handle preflight request
-        response = jsonify({'status': 'OK'})
-        response.headers.add('Access-Control-Allow-Origin', request.headers.get('Origin', '*'))
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
-        response.headers.add('Access-Control-Allow-Methods', 'POST, OPTIONS')
-        response.headers.add('Access-Control-Allow-Credentials', 'true')
-        return response
+    # Remove the manual handling of 'OPTIONS' method
+    # Your existing code to handle POST requests remains unchanged
 
     # Extract data from the request
     data = request.json
@@ -38,10 +32,10 @@ def chat():
 
     # Initialize memory for new sessions
     if session_id not in conversations:
-        conversations[session_id] = ConversationSummaryMemory(
-            llm=llm,  # Ensure 'llm' is accessible within process_query or pass appropriately
-            return_messages=True
-        )
+        conversations[session_id] = ConversationBufferMemory(
+        memory_key="history",
+        return_messages=True
+    )
 
     # Retrieve the memory associated with the session
     memory = conversations[session_id]
@@ -61,4 +55,3 @@ def after_request(response):
 
 if __name__ == '__main__':
     app.run(debug=True, host='127.0.0.1', port=5000)
-    
