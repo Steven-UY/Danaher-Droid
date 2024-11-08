@@ -1,7 +1,7 @@
-# Danaher-Droid Technical Documentation
+# Backend Documentation
 
 ## Overview
-This document provides detailed technical explanations and code snippets for how the Danaher-Droid works, including the RAG (Retrieval-Augmented Generation) pipeline and the specific tools and libraries used (YouTube Data API, youtube_transcript_api, Langchain, and Chroma).
+This document provides detailed technical explanations and code snippets for how the Backend works, including the RAG (Retrieval-Augmented Generation) pipeline and the specific tools and libraries used (YouTube Data API, youtube_transcript_api, Langchain, and Chroma). It will also cover how the Flask server is setup and details the API endpoints held within it.
 
 ---
 
@@ -183,61 +183,76 @@ while True:
 
 ## Flask API
 
-The Flask API serves as the backend for processing the user queries through the RAG pipeline.
-It also handles Cross-Origin Resource Sharing (CORS) for communication with the frontend by processing
-incoming requests to generate a response from the RAG pipeline.
+The Flask API serves as the backend for processing the user queries through the RAG pipeline. It also handles Cross-Origin Resource Sharing (CORS) for communication with the frontend by processing incoming requests to generate a response from the RAG pipeline.
 
-#### Base URL
-- Localhost: **http://127.0.0.1:5000**
+### Base URL
+- **Localhost**: `http://127.0.0.1:5000`
 
-#### Endpoints
+### Endpoints
 
-a. `/chat` Endpoint
-- This endpoint is designed to handle two types of HTTP requests **POST** and **OPTIONS**. Here's a detailed description of each part.
+#### 1. `/chat` Endpoint
+The `/chat` endpoint is designed to handle two types of HTTP requests: **POST** and **OPTIONS**.
 
-1. OPTIONS requests(CORS preflight)
+---
 
-```@app.route('/chat', methods=['POST', 'OPTIONS'])```
+#### a. **OPTIONS Request** - CORS Preflight
 
-- The OPTIONS request method is typically used in **CORS preflight requests**. A preflight request is sent by the browser to check if the server allows the request being sent (in this case the POST) before sending it, particularly if the frontend is operating at a different origin.
+- **Purpose**: The OPTIONS request method is typically used in **CORS preflight requests**. A preflight request is sent by the browser to check if the server allows the request being sent (in this case the POST request) before sending it, particularly if the frontend is operating at a different origin.
 
-2. OPTIONS Block
+- **Route**: 
+    ```python
+    @app.route('/chat', methods=['POST', 'OPTIONS'])
+    ```
 
-```typescript
-if request.method == 'OPTIONS':
-    # Handling preflight request
-    response = jsonify({'status': 'OK'})
-    response.headers.add('Access-Control-Allow-Origin', request.headers.get('Origin', '*'))# Allows requests from the origin at frontend
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type')#Allows Content-Type header from request
-    response.headers.add('Access-Control-Allow-Methods', 'POST')#POST requests allowed
-    return response;
-```
+- **Handling Preflight Requests**:
+    When an OPTIONS request is received, the server responds with the appropriate headers, indicating whether it allows the request from the frontend.
 
-- The blocks returns a simple **200 OK** response to tell the browser it is safe to proceed.
+    ```python
+    if request.method == 'OPTIONS':
+        # Handling preflight request
+        response = jsonify({'status': 'OK'})
+        response.headers.add('Access-Control-Allow-Origin', request.headers.get('Origin', '*'))  # Allows requests from the origin at frontend
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type')  # Allows Content-Type header from request
+        response.headers.add('Access-Control-Allow-Methods', 'POST')  # POST requests allowed
+        return response;
+    ```
 
-3. Handling Post Requests
+- **Response**: This block returns a simple **200 OK** response to tell the browser it is safe to proceed.
 
-```typescript
-data = request.json
-user_query = data.get('message')
+---
 
-# Process the query using your RAG pipeline
-response = process_query(user_query)
+#### b. **POST Request** - Handling User Queries
 
-return jsonify({'response': response})
-```
+- **Purpose**: The POST request processes the user query and returns a generated response from the RAG pipeline.
 
-- This extracts JSON data from the request, calls on the process_query function in the RAG pipeline. Then the response from the RAG pipeline is sent back to the client as a JSON object using jsonify.
+- **Request Body**:
+    - The request is expected to be in JSON format and must contain the user query.
+    ```json
+    {
+        "message": "User query here"
+    }
+    ```
 
+- **Handling POST Requests**:
+    The API extracts the JSON data from the request, specifically the user query, and processes it through the RAG pipeline.
 
+    ```python
+    data = request.json
+    user_query = data.get('message')
 
+    # Process the query using your RAG pipeline
+    response = process_query(user_query)
 
+    return jsonify({'response': response})
+    ```
 
-
-
-
-
-
+- **Response**:
+    - After processing, the server returns a JSON response containing the generated answer.
+    ```json
+    {
+        "response": "Generated response here"
+    }
+    ```
 
 ---
 

@@ -1,10 +1,13 @@
+import React from 'react';
 import Chatbot from './components/feature/Chatbot';
 import './globals.css';
 
-export default function Page() {
+const Page: React.FC = () => {
   return (
-    <div className="container mx-auto p-4">
-      <Chatbot />
-    </div>
+      <div className="container">
+        <Chatbot />
+      </div>
   );
-}
+};
+
+export default Page;

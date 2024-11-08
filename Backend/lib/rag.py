@@ -3,20 +3,21 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_chroma import Chroma
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from dotenv import load_dotenv
-from langchain import hub
-from langchain_core.output_parsers import StrOutputParser
-from langchain_core.runnables import RunnablePassthrough
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
+from langchain.memory import ConversationSummaryMemory
+from langchain_community.callbacks.manager import get_openai_callback
 import os
+from typing import List
 
+# Load environment variables
 load_dotenv()
 
 api_key = os.getenv("API_KEY")
-
 persist_directory = "./chroma_db"
 collection_name = "your_collection_name"
 
+# Initialize embeddings
 embeddings = OpenAIEmbeddings()
 
 # Check if the vectorstore already exists
@@ -31,57 +32,47 @@ else:
     # Create new vectorstore
     loader = TextLoader("./transcripts.txt")
     docs = loader.load()
-
+    
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=1500,
         chunk_overlap=500,
-        length_function=len,
-        is_separator_regex=False,
     )
-
-    all_splits = text_splitter.split_documents(docs)
-    print(f"Number of splits: {len(all_splits)}")
-
+    split_docs = text_splitter.split_documents(docs)
     vectorstore = Chroma.from_documents(
-        documents=all_splits, 
+        documents=split_docs,
         embedding=embeddings,
         collection_name=collection_name,
         persist_directory=persist_directory
     )
+    vectorstore.persist()
     print("Created and persisted new vectorstore")
 
 # Use the vectorstore
-retriever = vectorstore.as_retriever(search_type="similarity", search_kwargs={"k": 50})
+retriever = vectorstore.as_retriever(search_type="similarity", search_kwargs={"k": 40})
 
-llm = ChatOpenAI(model="gpt-4-0125-preview", temperature=0.3, max_tokens=1000)
+# Initialize the language model
+llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.3, max_tokens=1000)
 
-# Prompt template we use for the RAG template 
+# Define the topic
+topic = "Jiu-Jitsu, Grappling, Martial Arts, John Danaher(myself), Judo, Wrestling"
+
+# Define the prompt template
 prompt_template = """
-You are an AI assistant knowledgeable about Jiu-Jitsu.
+You are John Danaher, a renowned Jiu-Jitsu and Martial Arts instructor. Respond to the user in the first person.
 
-{chat_history}
+{history}
 
-Context:
-{context}
-
-Question:
-{question}
+{input}
 
 Provide a detailed answer using the context and your knowledge.
 """
 
 prompt = PromptTemplate(
-    input_variables=["chat_history", "context", "question"],
+    input_variables=["history", "input"],
     template=prompt_template
 )
 
-# Create LLMChain without memory
-rag_chain = LLMChain(
-    llm=llm,
-    prompt=prompt
-)
-
-#Prompt that we use for relevance checking
+# Prompt for relevance checking
 relevance_prompt = PromptTemplate(
     input_variables=["question", "topic"],
     template="""
@@ -94,42 +85,60 @@ Is this question relevant to the topic? Respond with only 'Yes' or 'No'.
 """
 )
 
-# Create a chain for relevance checking
+# Initialize the LLMChain for relevance checking
 relevance_chain = LLMChain(llm=llm, prompt=relevance_prompt)
 
-#checks if the question is relevant to the topic
 def is_question_relevant(question, topic):
-    response = relevance_chain.run(question=question, topic=topic)
-    return response.strip().lower() == 'yes'
+    """
+    Determines if a question is relevant to the given topic using an LLMChain.
 
-#formats list of docs into a single string, prepares inputs for the RAG chain
+    Args:
+        question (str): The user's query.
+        topic (str): The topic to check relevance against.
+
+    Returns:
+        bool: True if relevant, False otherwise.
+    """
+    try:
+        response = relevance_chain.run(question=question, topic=topic)
+        return response.strip().lower() == 'yes'
+    except Exception as e:
+        # Log the exception as needed
+        print(f"Error in relevance checking: {e}")
+        # Decide on a fallback strategy; here, defaulting to non-relevant
+        return False
+    
 def format_docs(docs):
     return "\n".join([doc.page_content for doc in docs])
 
-# Initialize conversation history
-conversation_history = []
-
-topic = "Jiu-Jitsu"  # Replace with your actual topic
-
-def process_query(user_query):
+def process_query(user_query, memory: ConversationSummaryMemory):
     # Check relevance
     if not is_question_relevant(user_query, topic):
-        return "I'm sorry, but that question doesn't seem to be related to Jiu-Jitsu. Could you please ask a question related to Jiu-Jitsu?"
+        return "I'm sorry, but that question isn't relevant to making you a better grappler. Can you ask a more relevant question?"
 
-    # Retrieve documents
+    # Retrieve relevant documents
     docs = retriever.get_relevant_documents(user_query)
 
-    # Format conversation history (you might need to adjust this part)
-    chat_history_formatted = ""  # You may want to pass conversation history from the frontend
+    # Prepare the context from documents
+    context = format_docs(docs)
 
-    # Prepare inputs for the chain
-    chain_inputs = {
-        "question": user_query,
-        "context": format_docs(docs),
-        "chat_history": chat_history_formatted
-    }
+    # Combine context and user query into a single input
+    combined_input = f"Context:\n{context}\n\nQuestion:\n{user_query}"
 
-    # Get the AI response
-    response = rag_chain(chain_inputs)
+    # Initialize the LLMChain with the updated prompt and memory
+    rag_chain = LLMChain(
+        llm=llm,
+        prompt=prompt,
+        memory=memory,
+        verbose=True
+    )
 
-    return response['text']
+    # Run the chain with the combined input
+    response = rag_chain.run(
+        input=combined_input
+    )
+
+    # Update memory with the user's query and AI's response
+    memory.save_context({"input": user_query}, {"output": response})
+
+    return response.strip()
