@@ -193,29 +193,26 @@ def is_input_relevant(input, topic):
 def format_docs(docs):
     return "\n".join([doc.page_content for doc in docs])
 
-def process_query(user_query, memory: ConversationBufferMemory):
-    # Load previous conversation context
-    conversation_vars = memory.load_memory_variables({})
-    conversation_history = conversation_vars.get("history", "")
+# Create persistent chain ONCE at module level
+memory = ConversationBufferMemory(memory_key="history", return_messages=True)
+conversation_chain = LLMChain(
+    llm=llm,
+    prompt=prompt,
+    memory=memory,
+    verbose=True
+)
 
+def process_query(user_query, memory: ConversationBufferMemory):
     # Check relevance
     if not is_input_relevant(user_query, topic):
         return "I apologize, but could you please ask something related to Jiu-Jitsu, martial arts, or training?"
 
-    # Retrieve relevant documents
-    docs = retriever.get_relevant_documents(user_query)
-    context = format_docs(docs)
-
-    # Create chain with memory
-    rag_chain = LLMChain(
-        llm=llm,
-        prompt=prompt,
-        memory=memory,
-        verbose=True
-    )
-
-    # Let the chain handle the conversation with memory
-    response = rag_chain.run(input=user_query)
-
-    return response
+    # Use existing chain with memory
+    try:
+        response = conversation_chain.run(user_query)
+        return response
+    except Exception as e:
+        print(f"Error processing query: {e}")
+        return "I apologize, I encountered an error processing your request."
+    
 
