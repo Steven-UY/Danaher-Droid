@@ -132,7 +132,12 @@ def is_input_relevant(input, topic):
         bool: True if relevant, False otherwise.
     """
     try:
-        # Extended personal and technical keywords to capture a wider range of relevant questions
+        # First check with LLM for broader context understanding
+        llm_response = relevance_chain.run(input=input, topic=topic)
+        if llm_response.strip().lower() == 'yes':
+            return True
+            
+        # Fall back to keyword matching if LLM says no
         personal_keywords = [
             # Identity and background
             "who are", "what is your", "tell me about", 
@@ -173,17 +178,12 @@ def is_input_relevant(input, topic):
             "learn", "understand", "master"
         ]
 
-        # Check for personal keywords
         if any(keyword in input.lower() for keyword in personal_keywords):
             return True
-
-        # Check for technical keywords
         if any(keyword in input.lower() for keyword in technical_keywords):
             return True
-
-        # Use the relevance_chain to check relevance
-        response = relevance_chain.run(input=input, topic=topic)
-        return response.strip().lower() == 'yes'
+            
+        return False
     except Exception as e:
         # Log the exception as needed
         print(f"Error in relevance checking: {e}")
@@ -214,7 +214,6 @@ def process_query(user_query, memory: ConversationBufferMemory):
         memory=memory,
         verbose=True
     )
-
     # Run the chain with the combined input
     response = rag_chain.run(
         input=combined_input
