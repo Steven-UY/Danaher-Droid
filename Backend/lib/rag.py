@@ -194,29 +194,28 @@ def format_docs(docs):
     return "\n".join([doc.page_content for doc in docs])
 
 def process_query(user_query, memory: ConversationBufferMemory):
+    # Load previous conversation context
+    conversation_vars = memory.load_memory_variables({})
+    conversation_history = conversation_vars.get("history", "")
+
     # Check relevance
     if not is_input_relevant(user_query, topic):
-        return "That isn't relevant, ask me something of more importance"
+        return "I apologize, but could you please ask something related to Jiu-Jitsu, martial arts, or training?"
 
     # Retrieve relevant documents
     docs = retriever.get_relevant_documents(user_query)
-
-    # Prepare the context from documents
     context = format_docs(docs)
 
-    # Combine context and user query into a single input
-    combined_input = f"Context:\n{context}\n\nQuestion:\n{user_query}"
-
-    # Initialize the LLMChain with the updated prompt and memory
+    # Create chain with memory
     rag_chain = LLMChain(
         llm=llm,
         prompt=prompt,
         memory=memory,
         verbose=True
     )
-    # Run the chain with the combined input
-    response = rag_chain.run(
-        input=combined_input
-    )
 
-    return response.strip()
+    # Let the chain handle the conversation with memory
+    response = rag_chain.run(input=user_query)
+
+    return response
+
