@@ -41,7 +41,7 @@ def chat():
     memory = conversations[session_id]
 
     # Process the user's query with the current session's memory
-    response_text = process_query(user_query, memory)
+    response_text = process_query(user_query)
 
     # Return the response along with the session ID
     return jsonify({'response': response_text, 'session_id': session_id})
