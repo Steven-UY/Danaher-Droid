@@ -13,6 +13,19 @@ type Message = {
   sender: 'user' | 'bot';
 };
 
+interface CustomMediaRecorder extends MediaRecorder {
+  start: () => void;
+  stop: () => void;
+  ondataavailable: (event: BlobEvent) => void;
+  onstop: () => void;
+}
+
+
+export const useRecordVoice = () => {
+  
+};
+
+
 export default function ChatbotInterface() {
   const [messages, setMessages] = useState<Message[]>([
     { content: "You’re on the mats with John Danaher after class...", sender: 'bot' }
@@ -23,7 +36,49 @@ export default function ChatbotInterface() {
   const [isLoading, setIsLoading] = useState(false); // For loading animation
   const [isTyping, setIsTyping] = useState(false); // For typing effect
   const [isAtBottom, setIsAtBottom] = useState(true);
+  const [mediaRecorder, setMediaRecorder] = useState<CustomMediaRecorder | null>(null);
+  const [recording, setRecording] = useState(false);
+  const chunks = useRef<Blob[]>([]);
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      navigator.mediaDevices
+        .getUserMedia({ audio: true })
+        .then((stream) => {
+          const recorder = new MediaRecorder(stream);
+          
+          recorder.ondataavailable = (e: BlobEvent) => {
+            chunks.current.push(e.data);
+          };
+          
+          recorder.onstop = async () => {
+            const audioBlob = new Blob(chunks.current, { type: 'audio/wav' });
+            chunks.current = [];
+            // Handle the audio blob - convert to text later
+            console.log('Recording stopped, blob created:', audioBlob);
+          };
+          
+          setMediaRecorder(recorder as CustomMediaRecorder);
+        })
+        .catch(console.error);
+    }
+  }, []);
+
+
+  const startRecording = () => {
+    if (mediaRecorder && mediaRecorder.state === 'inactive') {
+      chunks.current = []; // Clear previous chunks
+      mediaRecorder.start();
+      setRecording(true);
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorder) {
+      (mediaRecorder as CustomMediaRecorder).stop();
+      setRecording(false);
+    }
+  };
 
   const scrollToBottom = () => {
     if (isAtBottom && scrollAreaRef.current) {
@@ -35,7 +90,7 @@ export default function ChatbotInterface() {
       }
     }
   };
-  
+
 
   useLayoutEffect(() => {
     scrollToBottom();
@@ -80,7 +135,7 @@ export default function ChatbotInterface() {
       handleSend();
     }
   };
-
+  
   const simulateTypingEffect = (text: string) => {
     let index = 0;
     setDisplayedMessage(''); // Clear displayed message before typing effect starts
@@ -201,9 +256,14 @@ export default function ChatbotInterface() {
               <Send className="h-4 w-4" />
               <span className="sr-only">Send</span>
             </Button>
-            <Button size="icon" className="bg-zinc-700 hover:bg-zinc-600">
-              <Phone className="h-4 w-4" />
-              <span className="sr-only">Call</span>
+            <Button 
+            onClick={recording ? stopRecording : startRecording}
+            className={`${recording ? 'bg-red-500' : 'bg-zinc-700'} hover:bg-zinc-600`}
+            >
+            <Phone className="h-4 w-4" />
+            <span className="sr-only">
+            {recording ? 'Stop Recording' : 'Start Recording'}
+            </span>
             </Button>
           </div>
         </div>

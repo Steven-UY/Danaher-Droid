@@ -3,6 +3,8 @@ from flask_cors import CORS
 from rag import process_query, llm  # Import your RAG function
 from langchain.memory import ConversationBufferMemory
 import uuid
+import whisper
+import os 
 
 
 app = Flask(__name__)
@@ -13,9 +15,33 @@ CORS(app, resources={r"/chat": {"origins": "http://localhost:3000"}},
      methods=["POST", "OPTIONS"],
      allow_headers=["Content-Type"])
 
+model = whisper.load_model("base")
 
 # In-memory storage for sessions (use a persistent storage like Redis or a database for production)
 conversations = {}
+
+@app.route('/transcribe', methods=['POST'])
+def transcribe():
+    if 'audio' not in request.files:
+        return jsonify({'error': 'No audio file provided'}), 400
+    
+    audio_file = request.files['audio']
+    # Save the uploaded audio file temporarily
+    audio_path = os.path.join('/tmp', audio_file.filename)
+    audio_file.save(audio_path)
+    
+    try:
+        # Transcribe the audio file using Whisper
+        result = model.transcribe(audio_path)
+        transcription = result['text']
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        # Clean up the temporary audio file
+        if os.path.exists(audio_path):
+            os.remove(audio_path)
+    
+    return jsonify({'transcription': transcription})
 
 @app.route('/chat', methods=['POST'])
 def chat():
