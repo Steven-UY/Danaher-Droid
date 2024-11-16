@@ -10,10 +10,13 @@ import os
 app = Flask(__name__)
 
 # Configure CORS for specific routes and options
-CORS(app, resources={r"/chat": {"origins": "http://localhost:3000"}}, 
-     supports_credentials=True,
-     methods=["POST", "OPTIONS"],
-     allow_headers=["Content-Type"])
+CORS(app, resources={
+    r"/chat": {"origins": "http://localhost:3000"},
+    r"/transcribe": {"origins": "http://localhost:3000"}
+}, 
+supports_credentials=True,
+methods=["POST", "OPTIONS"],
+allow_headers=["Content-Type"])
 
 model = whisper.load_model("base")
 
@@ -45,34 +48,24 @@ def transcribe():
 
 @app.route('/chat', methods=['POST'])
 def chat():
-    # Remove the manual handling of 'OPTIONS' method
-    # Your existing code to handle POST requests remains unchanged
 
-    # Extract data from the request
     data = request.json
     user_query = data.get('message')
-    session_id = data.get('session_id')  # Get session ID from the request
+    session_id = data.get('session_id') 
 
     if not session_id:
-        session_id = str(uuid.uuid4())  # Generate a new session ID if not provided
+        session_id = str(uuid.uuid4())
 
-    # Initialize memory for new sessions
     if session_id not in conversations:
         conversations[session_id] = ConversationBufferMemory(
         memory_key="history",
         return_messages=True
     )
-
-    # Retrieve the memory associated with the session
-    memory = conversations[session_id]
-
-    # Process the user's query with the current session's memory
+        
     response_text = process_query(user_query)
 
-    # Return the response along with the session ID
     return jsonify({'response': response_text, 'session_id': session_id})
 
-# Debug output for request and response headers
 @app.after_request
 def after_request(response):
     print(f"Request from origin: {request.headers.get('Origin')}")
