@@ -141,7 +141,6 @@ To escape mount, focus on three key principles: 1) Bridge 2) Frame 3) Create spa
 The first principle was bridging.
 """
 
-
 prompt = PromptTemplate(
     input_variables=["history", "input"],
     template=prompt_template
@@ -279,4 +278,3 @@ def process_query(user_query):
         print(f"Error processing query: {e}")
         return "I apologize, I encountered an error processing your request."
     
-

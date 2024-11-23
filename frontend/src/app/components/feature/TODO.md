@@ -1,0 +1,9 @@
+- [ ] implement the audio recording in Frontend
+ - [X] Create handler function in ChatbotInterface
+ - [X] Make axios POST request to backend
+ - [X] Handle response/errors
+ - [X] Update chat with transcribed text
+- [ ] send audio to the Backend
+- [ ] process the audio to get a text response from the chatbot
+- [ ] use ElevenLabs API to generate a voice response
+- [ ] send the generated audio back to the frontend to be played

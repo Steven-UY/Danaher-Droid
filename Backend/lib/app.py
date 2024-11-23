@@ -2,12 +2,22 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from rag import process_query, llm  # Import your RAG function
 from langchain.memory import ConversationBufferMemory
+from dotenv import load_dotenv
 import uuid
+import openai
+from openai import OpenAI
 import whisper
-import os 
+import os
 
 
 app = Flask(__name__)
+
+load_dotenv()
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+if not OPENAI_API_KEY:
+    raise ValueError("Missing OPENAI_API_KEY")
+
+client = OpenAI(api_key=OPENAI_API_KEY)
 
 # Configure CORS for specific routes and options
 CORS(app, resources={
@@ -23,28 +33,6 @@ model = whisper.load_model("base")
 # In-memory storage for sessions (use a persistent storage like Redis or a database for production)
 conversations = {}
 
-@app.route('/transcribe', methods=['POST'])
-def transcribe():
-    if 'audio' not in request.files:
-        return jsonify({'error': 'No audio file provided'}), 400
-    
-    audio_file = request.files['audio']
-    # Save the uploaded audio file temporarily
-    audio_path = os.path.join('/tmp', audio_file.filename)
-    audio_file.save(audio_path)
-    
-    try:
-        # Transcribe the audio file using Whisper
-        result = model.transcribe(audio_path)
-        transcription = result['text']
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-    finally:
-        # Clean up the temporary audio file
-        if os.path.exists(audio_path):
-            os.remove(audio_path)
-    
-    return jsonify({'transcription': transcription})
 
 @app.route('/chat', methods=['POST'])
 def chat():
@@ -66,6 +54,43 @@ def chat():
 
     return jsonify({'response': response_text, 'session_id': session_id})
 
+
+@app.route('/transcribe', methods=['POST'])
+def transcribe():
+    try:
+        print("Debug: Received request")
+        
+        if 'audio' not in request.files:
+            return jsonify({'error': 'No audio file provided'}), 400
+
+        audio_file = request.files['audio']
+        print(f"Debug: Audio filename: {audio_file.filename}")
+        
+        if audio_file.filename == '':
+            return jsonify({'error': 'No file selected'}), 400
+
+        # Convert FileStorage to a file-like object
+        audio_file_object = audio_file.stream
+
+        # Use OpenAI Whisper API to transcribe the audio
+        transcript = client.audio.transcriptions.create(
+            file=audio_file_object,
+            model="whisper-1"
+        )
+        
+        transcribed_text = transcript.text
+        response_text = process_query(transcribed_text)
+
+        return jsonify({
+            'success': True,
+            'text': transcribed_text,
+            'response': response_text
+        }), 200
+    
+    except Exception as e:
+        print(f"Error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.after_request
 def after_request(response):
     print(f"Request from origin: {request.headers.get('Origin')}")
@@ -74,3 +99,5 @@ def after_request(response):
 
 if __name__ == '__main__':
     app.run(debug=True, host='127.0.0.1', port=5000)
+    
+

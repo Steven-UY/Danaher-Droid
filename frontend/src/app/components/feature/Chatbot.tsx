@@ -11,19 +11,21 @@ import axios from 'axios';
 import { Message } from './types';
 import { useRecordVoice } from './useRecordVoice';
 
+
 const ChatbotInterface: React.FC = () => {
+
   const [messages, setMessages] = useState<Message[]>([
-    { content: "You’re on the mats with John Danaher after class...", sender: 'bot' }
+    {
+      content: "You're on the mats with John Danaher after class...",
+      sender: 'bot',
+    },
   ]);
-  const [input, setInput] = useState('');
+  const [userInput, setUserInput] = useState('');
   const [displayedMessage, setDisplayedMessage] = useState<string>('');
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [isAtBottom, setIsAtBottom] = useState(true);
-
-  // Voice recording state and functions from custom hook
-  const { recording, startRecording, stopRecording } = useRecordVoice();
 
   const scrollToBottom = () => {
     if (isAtBottom && scrollAreaRef.current) {
@@ -53,19 +55,20 @@ const ChatbotInterface: React.FC = () => {
       };
   
       scrollContainer.addEventListener('scroll', handleScroll);
-  
+      
       return () => {
         scrollContainer.removeEventListener('scroll', handleScroll);
       };
     }
   }, []);
 
+
   const handleSend = async (messageInput?: string) => {
-    const message = messageInput || input;
+    const message = messageInput || userInput;
     if (message.trim()) {
       const userMessage: Message = { content: message, sender: 'user' };
       setMessages((prev) => [...prev, userMessage]);
-      setInput('');
+      setUserInput('');
       setIsLoading(true);
 
       try {
@@ -94,7 +97,42 @@ const ChatbotInterface: React.FC = () => {
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  //handler function for voice input passed to useRecordVoice hook 
+  const handleVoiceInput = async (audioBlob: Blob) => {
+    const formData = new FormData();
+    formData.append('audio', audioBlob);
+
+    try {
+      setIsLoading(true);
+      const response = await axios.post(
+        'http://127.0.0.1:5000/transcribe',
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+
+      if (response.data.text) {
+        handleSend(response.data.text);
+      }
+    } catch (error) {
+      console.error('Error processing voice input:', error);
+      const errorMessage: Message = {
+        content: 'Sorry, there was an error processing your voice input.',
+        sender: 'bot',
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
+      }
+    };
+
+  //initialize the useRecordVoice hook here, handleVoiceInput is passed as the callback function
+  const { recording, startRecording, stopRecording } = useRecordVoice(handleVoiceInput);
+
+  const handleEnterPressed = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSend();
@@ -117,8 +155,9 @@ const ChatbotInterface: React.FC = () => {
         setDisplayedMessage('');
         setIsTyping(false);
       }
-    }, 5); // Adjust typing speed by changing the interval time
+    }, 5);
   };
+  
 
   return (
     <div className="flex flex-col h-screen w-screen items-center bg-zinc-900 text-zinc-100 overflow-x-hidden">
@@ -131,21 +170,17 @@ const ChatbotInterface: React.FC = () => {
         />
         <ScrollArea ref={scrollAreaRef} className="flex-1 px-4 py-0 overflow-x-hidden">
           <MessageList messages={messages} />
-          
-          {/* Loading Animation */}
           {isLoading && <LoadingIndicator />}
-
-          {/* Typing Effect */}
           {isTyping && displayedMessage && <TypingEffect displayedMessage={displayedMessage} />}
         </ScrollArea>
         <div className="border-zinc-800 p-4">
           <InputArea 
-            input={input}
-            onInputChange={(e) => setInput(e.target.value)}
+            input={userInput}
+            onInputChange={(e) => setUserInput(e.target.value)}
             onSend={() => handleSend()}
             onStartStopRecording={recording ? stopRecording : startRecording}
             isRecording={recording}
-            onKeyDown={handleKeyDown}
+            onKeyDown={handleEnterPressed}
           />
         </div>
       </div>
